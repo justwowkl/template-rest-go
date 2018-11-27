@@ -24,14 +24,24 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Validator = &customValidator{validator: validator.New()}
 
-	// g := e.Group("/admin")
+	// healthcheck API
+	// need restricted access
 	e.GET("/health", api.Health)
-	e.POST("/test", api.Test)
-	e.POST("/pub/signin", api.PubSignin)
 
+	// public API
+	ePub := e.Group("/pub")
+	ePub.GET("/test", api.PubTest)
+	ePub.POST("/signin", api.PubSignin)
+
+	// user API
+	// need auth with JWT
 	eUser := e.Group("/user")
 	eUser.Use(middleware.JWT([]byte("secret")))
 	eUser.GET("/me", api.UserMe)
+
+	// admin API
+	// need auth with JWT + DB query
+	// eAdmin := e.Group("/admin")
 
 	e.Logger.Fatal(e.Start(":3000"))
 }
