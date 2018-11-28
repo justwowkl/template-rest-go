@@ -2,6 +2,7 @@ module local/util
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-redis/redis v6.14.2+incompatible
 	github.com/labstack/echo v3.3.5+incompatible
 	github.com/labstack/gommon v0.2.8 // indirect
 	github.com/mattn/go-colorable v0.0.9 // indirect
