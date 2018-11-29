@@ -40,7 +40,7 @@ func main() {
 	eUser.GET("/me", api.UserMe)
 
 	// admin API
-	// need auth with JWT + DB query
+	// need auth with JWT & DB query
 	// eAdmin := e.Group("/admin")
 
 	e.Logger.Fatal(e.Start(":3000"))
