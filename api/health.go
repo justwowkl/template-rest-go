@@ -4,28 +4,37 @@ import (
 	"net/http"
 	"sync"
 
+	"local/util"
+
 	"github.com/labstack/echo"
 )
 
 var _isFullCheckDone = false
-var _rwMutex = new(sync.RWMutex)
+var _rwMutexHealth = new(sync.RWMutex)
 
 // Health health check
 func Health(c echo.Context) error {
-	_rwMutex.RLock()
+	_rwMutexHealth.RLock()
 	isFullCheckDone := _isFullCheckDone
-	_rwMutex.RUnlock()
+	_rwMutexHealth.RUnlock()
 	if isFullCheckDone {
 		// simple test
 		return c.String(http.StatusOK, "")
 	}
 
 	// do full test
-	// ...
+	if util.CacheHealth() &&
+		util.CacheHealth() &&
+		util.CacheHealth() {
 
-	// if succeed full test
-	_rwMutex.Lock()
-	_isFullCheckDone = true
-	_rwMutex.Unlock()
-	return c.String(http.StatusOK, "")
+		// update full test flag
+		_rwMutexHealth.Lock()
+		_isFullCheckDone = true
+		_rwMutexHealth.Unlock()
+
+		// return succeed
+		return c.String(http.StatusOK, "")
+	}
+
+	return c.String(http.StatusInternalServerError, "")
 }
