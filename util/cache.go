@@ -30,6 +30,7 @@ func CacheHealth() bool {
 		fmt.Println("cache not respond")
 		return false
 	}
+	fmt.Println("cache health okay")
 	return true
 }
 
