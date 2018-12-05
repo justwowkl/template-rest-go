@@ -7,31 +7,27 @@ import (
 	"github.com/go-redis/redis"
 )
 
-// var client *redis.Client
-var _redisClient = redis.NewClient(&redis.Options{
-	// https://godoc.org/github.com/go-redis/redis#Options
-	Addr:         "localhost:6379",
-	Password:     "", // no password set
-	DB:           0,  // use default DB
-	PoolSize:     20, // default is 10, per CPU
-	ReadTimeout:  time.Second,
-	WriteTimeout: time.Second,
-})
+var _redisClient *redis.Client
 
-// CacheInit init cache
-// func CacheInit() {
-// 	if client != nil {
-// 		return
-// 	}
-// 	client = redis.NewClient(&redis.Options{
-// 		...
-// 	})
-// }
+// cacheInit init cache
+func cacheInit() {
+	_redisClient = redis.NewClient(&redis.Options{
+		// https://godoc.org/github.com/go-redis/redis#Options
+		Addr:         "localhost:6379",
+		Password:     "", // no password set
+		DB:           0,  // use default DB
+		PoolSize:     20, // default is 10, per CPU
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+	})
+	fmt.Println("cache init done")
+}
 
 // CacheHealth healthcheck
 func CacheHealth() bool {
 	_, err := _redisClient.Ping().Result()
 	if err != nil {
+		fmt.Println("cache not respond")
 		return false
 	}
 	return true

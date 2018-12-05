@@ -6,6 +6,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"local/api"
+	"local/util"
 )
 
 // https://github.com/go-playground/validator
@@ -18,6 +19,8 @@ func (cv *customValidator) Validate(i interface{}) error {
 }
 
 func main() {
+
+	util.Init()
 	e := echo.New()
 
 	e.Use(middleware.Logger())
