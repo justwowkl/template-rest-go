@@ -9,6 +9,10 @@ import (
 	"github.com/labstack/echo"
 )
 
+// set for local test
+// sudo docker run --name postgres -e POSTGRES_PASSWORD=1029 -p 5432:5432 -d postgres:10-alpine
+// sudo docker run --name redis -p 6379:6379 -d redis:alpine
+
 var _isFullCheckDone = false
 var _rwMutexHealth = new(sync.RWMutex)
 
@@ -23,8 +27,7 @@ func Health(c echo.Context) error {
 	}
 
 	// do full test
-	if util.CacheHealth() &&
-		util.CacheHealth() &&
+	if util.DBhealth() &&
 		util.CacheHealth() {
 
 		// update full test flag
