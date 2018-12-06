@@ -6,11 +6,17 @@ import (
 	"github.com/jackc/pgx"
 )
 
-var _pgConfig = &pgx.ConnConfig{
-	Host:     "localhost",
-	User:     "postgres",
-	Password: "1029",
-	Database: "pgx_test",
+var _pgConfig *pgx.ConnConfig
+
+// DBinit init db config
+func DBinit() {
+	_pgConfig = &pgx.ConnConfig{
+		Host:     "localhost",
+		User:     "postgres",
+		Password: "1029",
+		Database: "pgx_test",
+	}
+	fmt.Println("db init done")
 }
 
 // DBhealth healthcheck
