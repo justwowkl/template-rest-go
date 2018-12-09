@@ -12,11 +12,9 @@ import (
 func PubSignin(c echo.Context) error {
 
 	type requestScheme struct {
-		Name string `json:"name" validate:"required"`
-		Msg  string `json:"msg" validate:"required"`
-		Num  int    `json:"num" validate:"required"`
+		Provider  string `json:"provider" validate:"required, oneof=fb gg"`
+		AuthToken string `json:"authToken" validate:"required, Alphanumeric"`
 	}
-
 	type responseScheme struct {
 		Token string `validate:"required"`
 	}
@@ -28,14 +26,18 @@ func PubSignin(c echo.Context) error {
 	if err := c.Validate(requestJSON); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
+	// -----------------
 	// need error standard
+
+	// async - ask to DB & get info
+	// async - ask to Porvider
 
 	// Create token
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	// Set claims
 	claims := token.Claims.(jwt.MapClaims)
-	claims["name"] = requestJSON.Name
+	// claims["name"] = requestJSON.Name
 	claims["admin"] = true
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 
@@ -45,6 +47,7 @@ func PubSignin(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
+	// -----------------
 	responseJSON := &responseScheme{
 		Token: t,
 	}
