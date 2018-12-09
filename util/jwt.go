@@ -1,22 +1,6 @@
 package util
 
-// import (
-// 	"crypto/aes"
-// 	"crypto/cipher"
-// 	"crypto/md5"
-// 	"crypto/rand"
-// 	"encoding/hex"
-// 	"encoding/json"
-// 	"io"
-// 	"time"
-
-// 	"github.com/dgrijalva/jwt-go"
-// 	"github.com/labstack/echo"
-// 	"gitlab.com/hartsfield/gencrypt"
-// )
-
-// var keyAES = []byte("safh97hf9fhja98ewfj94fjh98djdfjh")
-// var gcm *gencrypt.Galois
+var keyAES string
 
 // // JwtCreate create new jwt token
 // func JwtCreate(data map[string]interface{}) (string, error) {

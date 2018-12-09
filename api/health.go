@@ -27,9 +27,7 @@ func Health(c echo.Context) error {
 	}
 
 	// do full test
-	if util.DBhealth() &&
-		util.CacheHealth() {
-
+	if util.Health() {
 		// update full test flag
 		_rwMutexHealth.Lock()
 		_isFullCheckDone = true

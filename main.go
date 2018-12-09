@@ -34,6 +34,7 @@ func main() {
 	// public API
 	ePub := e.Group("/pub")
 	ePub.GET("/test", api.PubTest)
+	ePub.GET("/testData", api.PubTestData)
 	ePub.POST("/signin", api.PubSignin)
 
 	// user API
