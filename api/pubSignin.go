@@ -1,10 +1,9 @@
 package api
 
 import (
+	"local/util"
 	"net/http"
-	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 )
 
@@ -33,23 +32,15 @@ func PubSignin(c echo.Context) error {
 	// async - ask to Porvider
 
 	// Create token
-	token := jwt.New(jwt.SigningMethodHS256)
-
-	// Set claims
-	claims := token.Claims.(jwt.MapClaims)
-	// claims["name"] = requestJSON.Name
-	claims["admin"] = true
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
-
-	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte("secret"))
+	data := util.JwtData{ID: 1}
+	token, err := util.JwtCreate(data)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	// -----------------
 	responseJSON := &responseScheme{
-		Token: t,
+		Token: token,
 	}
 	if err := c.Validate(responseJSON); err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
