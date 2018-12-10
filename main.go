@@ -7,6 +7,7 @@ import (
 
 	"local/api"
 	"local/util"
+	"local/custommw"
 )
 
 // https://github.com/go-playground/validator
@@ -40,7 +41,8 @@ func main() {
 	// user API
 	// need auth with JWT
 	eUser := e.Group("/user")
-	eUser.Use(middleware.JWT([]byte("secret")))
+	eUser.Use(middleware.JWT([]byte(util.KeyJWT)))
+	eUser.Use(custommw.JwtLoader)
 	eUser.GET("/me", api.UserMe)
 
 	// admin API

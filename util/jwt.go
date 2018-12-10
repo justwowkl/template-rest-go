@@ -8,8 +8,9 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 )
 
+// KeyJWT jwt key
+var KeyJWT = "hihi"
 var keyAES = "hihi"
-var keyJWT = "hihi"
 var expireHour = time.Duration(24)
 var jwtValidate = validator.New()
 
@@ -43,7 +44,7 @@ func JwtCreate(data JwtData) (string, error) {
 	claims["exp"] = time.Now().Add(time.Hour * expireHour).Unix()
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte(keyJWT))
+	t, err := token.SignedString([]byte(KeyJWT))
 	if err != nil {
 		return "", err
 	}
