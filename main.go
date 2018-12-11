@@ -41,8 +41,8 @@ func main() {
 	// user API
 	// need auth with JWT
 	eUser := e.Group("/user")
-	eUser.Use(middleware.JWT([]byte(util.KeyJWT)))
-	eUser.Use(custommw.JwtLoader)
+	// eUser.Use(middleware.JWT([]byte(util.KeyJWT)))
+	eUser.Use(custommw.AuthUser)
 	eUser.GET("/me", api.UserMe)
 
 	// admin API
