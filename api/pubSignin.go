@@ -11,8 +11,8 @@ import (
 func PubSignin(c echo.Context) error {
 
 	type requestScheme struct {
-		Provider  string `json:"provider" validate:"required, oneof=fb gg"`
-		AuthToken string `json:"authToken" validate:"required, Alphanumeric"`
+		Provider  string `json:"provider" validate:"required,oneof=fb gg"`
+		AuthToken string `json:"authToken" validate:"required,alphanum"`
 	}
 	type responseScheme struct {
 		Token string `validate:"required"`
@@ -32,7 +32,7 @@ func PubSignin(c echo.Context) error {
 	// async - ask to Porvider
 
 	// Create token
-	data := util.JwtData{ID: 1}
+	data := util.JwtData{ID: 88}
 	token, err := util.JwtCreate(data)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
