@@ -8,6 +8,7 @@ import (
 	"local/api"
 	"local/util"
 	"local/custommw"
+	"local/worker"
 )
 
 // https://github.com/go-playground/validator
@@ -30,6 +31,8 @@ func main() {
 
 	// healthcheck API
 	// need restricted access
+	api.HealthSetSuccessHandler(worker.Start)
+	api.HealthSetFailHandler(worker.Stop)
 	e.GET("/health", api.Health)
 
 	// public API
