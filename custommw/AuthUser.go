@@ -21,6 +21,7 @@ func AuthUser(next echo.HandlerFunc) echo.HandlerFunc {
 		// set datas to Context
 		c.Set("id", data.ID)
 
-		return nil
+		return next(c)
+
 	}
 }
