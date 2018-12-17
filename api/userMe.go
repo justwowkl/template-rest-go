@@ -3,25 +3,22 @@ package api
 import (
 	"net/http"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 )
 
 // UserMe health check
 func UserMe(c echo.Context) error {
 
+	println("start me")
 	type responseScheme struct {
-		Name    string `validate:"required"`
-		IsAdmin bool   `validate:"required"`
+		ID int `json:"id" validate:"required"`
 	}
-
-	user := c.Get("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
 
 	responseJSON := &responseScheme{
-		Name:    claims["name"].(string),
-		IsAdmin: claims["admin"].(bool),
+		ID: c.Get("id").(int),
 	}
+	println("hi!")
+	println("id : ", responseJSON.ID)
 	if err := c.Validate(responseJSON); err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
