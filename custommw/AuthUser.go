@@ -2,6 +2,7 @@ package custommw
 
 import (
 	"local/util"
+	"net/http"
 
 	"github.com/labstack/echo"
 )
@@ -16,7 +17,7 @@ func AuthUser(next echo.HandlerFunc) echo.HandlerFunc {
 		// verify & get Data
 		data, err := util.JwtVerify(jwtToken)
 		if err != nil {
-			c.Error(err)
+			return c.String(http.StatusUnauthorized, "")
 		}
 		// set datas to Context
 		c.Set("id", data.ID)
