@@ -25,12 +25,13 @@ func main() {
 	util.Init()
 	e := echo.New()
 
+	e.Use(custommw.RateLimit)
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Validator = &customValidator{validator: validator.New()}
 
 	// healthcheck API
-	// need restricted access
+	// need restricted access (only internal IP)
 	api.HealthSetSuccessHandler(worker.Start)
 	api.HealthSetFailHandler(worker.Stop)
 	e.GET("/health", api.Health)
