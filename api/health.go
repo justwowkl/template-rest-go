@@ -35,9 +35,6 @@ func Health(c echo.Context) error {
 	_healthRWMutex.RUnlock()
 	if isFullCheckDone {
 		// simple test
-		if _healthFailHandler != nil {
-			_healthFailHandler()
-		}
 		return c.String(http.StatusOK, "")
 	}
 
@@ -55,5 +52,8 @@ func Health(c echo.Context) error {
 		return c.String(http.StatusOK, "")
 	}
 
+	if _healthFailHandler != nil {
+		_healthFailHandler()
+	}
 	return c.String(http.StatusInternalServerError, "")
 }
