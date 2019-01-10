@@ -6,8 +6,8 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 
 	"local/api"
-	"local/util"
 	"local/custommw"
+	"local/util"
 	"local/worker"
 )
 
@@ -25,8 +25,9 @@ func main() {
 	util.Init()
 	e := echo.New()
 
-	e.Use(custommw.RateLimit)
 	e.Use(middleware.Logger())
+	e.Use(custommw.Logger)
+	e.Use(custommw.RateLimit)
 	e.Use(middleware.Recover())
 	e.Validator = &customValidator{validator: validator.New()}
 
