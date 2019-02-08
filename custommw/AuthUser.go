@@ -15,7 +15,7 @@ func AuthUser(next echo.HandlerFunc) echo.HandlerFunc {
 		jwtToken := c.Request().Header.Get("tkn")
 
 		// verify & get Data
-		data, err := util.JwtVerify(jwtToken)
+		data, err := util.JwtVerify(jwtToken, c.RealIP())
 		if err != nil {
 			return c.String(http.StatusUnauthorized, "")
 		}

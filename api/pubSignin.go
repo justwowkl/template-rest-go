@@ -32,7 +32,7 @@ func PubSignin(c echo.Context) error {
 	// async - ask to Porvider
 
 	// Create token
-	data := util.JwtData{ID: 88}
+	data := util.JwtData{ID: 88, IP: "0.0.0.0"} //c.RealIP()
 	token, err := util.JwtCreate(data)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())

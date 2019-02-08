@@ -16,7 +16,8 @@ var jwtValidate = validator.New()
 
 // JwtData data
 type JwtData struct {
-	ID int `validate:"required"`
+	ID int    `validate:"required"`
+	IP string `validate:"required"`
 }
 
 // JwtCreate create new jwt token
@@ -57,7 +58,7 @@ func JwtCreate(data JwtData) (string, error) {
 }
 
 // JwtVerify verify data
-func JwtVerify(tokenString string) (JwtData, error) {
+func JwtVerify(tokenString string, ip string) (JwtData, error) {
 
 	// parse jwt token
 	token, err := jwt.ParseWithClaims(tokenString, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -93,6 +94,10 @@ func JwtVerify(tokenString string) (JwtData, error) {
 	}
 	// validate struct
 	if err := jwtValidate.Struct(data); err != nil {
+		return JwtData{}, err
+	}
+	// check user IP
+	if data.IP != ip {
 		return JwtData{}, err
 	}
 
