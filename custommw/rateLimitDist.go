@@ -11,16 +11,17 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 var redisTimeoutMil = 100
 
 // refer https://www.alexedwards.net/blog/how-to-rate-limit-http-requests
 
-// RateDistRule rule for distruribted rate limit
+// RateDistRuleRaw rule for distruribted rate limit
 type RateDistRuleRaw struct {
 	RedisEndpoint string `json:"redisEndpoint" validate:"required"`
-	HeaderKey     string `json:"headerKey" validate:"required,alphanum"`
+	HeaderKey     string `json:"headerKey" validate:"required"`
 	LookupSec     uint   `json:"LookupSec" validate:"required,gt=0"`
 	Limit         int64  `json:"limit" validate:"required,gt=0"`
 	// redisCli  *redis.Client
@@ -202,8 +203,15 @@ func rateDistUpdateConfig() {
 	rulesNew := make([]rateDistRule, 0, len(rulesRaw))
 
 	// create new rules object
+	jsonValidate := validator.New()
 	for _, ruleRaw := range rulesRaw {
 		// validate
+		err := jsonValidate.Struct(ruleRaw)
+		if err != nil {
+			// json error..!
+			println(err.Error())
+			return
+		}
 
 		// check new header key
 		var reuseRedisCli *redis.Client
@@ -256,8 +264,6 @@ func rateDistUpdateConfig() {
 	// 4. apply to config
 	_rateDistLimiterRuleRWMutex.Lock()
 	_rateDistLimiterRules = rulesNew
-	fmt.Println(_rateDistLimiterRules)
-	fmt.Println(len(_rateDistLimiterRules))
 	_rateDistLimiterRuleRWMutex.Unlock()
 
 	// 5. update updatedtime

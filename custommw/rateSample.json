@@ -8,7 +8,7 @@
     {
         "headerKey": "x-forwarded-for",
         "lookupSec": 10111,
-        "limit": 9999,
+        "limit": 1,
         "redisEndpoint": ":3128"
     }
 ]
