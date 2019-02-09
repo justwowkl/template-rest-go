@@ -11,7 +11,6 @@ import (
 	"local/worker"
 )
 
-// https://github.com/go-playground/validator
 type customValidator struct {
 	validator *validator.Validate
 }
