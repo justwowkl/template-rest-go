@@ -1,0 +1,14 @@
+[
+    {
+        "headerKey": "apikey",
+        "lookupSec": 10,
+        "limit": 20,
+        "redisEndpoint": ":3128"
+    },
+    {
+        "headerKey": "x-forwarded-for",
+        "lookupSec": 10111,
+        "limit": 9999,
+        "redisEndpoint": ":3128"
+    }
+]
