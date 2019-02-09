@@ -23,12 +23,13 @@ func (cv *customValidator) Validate(i interface{}) error {
 func main() {
 
 	util.Init()
-	custommw.InitRateLocal()
+	// custommw.InitRateLocal()
+	custommw.InitRateDist()
 	e := echo.New()
 
 	e.Use(middleware.Logger())
 	// e.Use(custommw.Logger)
-	e.Use(custommw.RateLimitLocal)
+	// e.Use(custommw.RateLimitLocal)
 	e.Use(middleware.Recover())
 	e.Validator = &customValidator{validator: validator.New()}
 
