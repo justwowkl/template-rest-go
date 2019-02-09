@@ -1,6 +1,7 @@
 module local/custommw
 
 require (
+	github.com/bluele/gcache v0.0.0-20171010155617-472614239ac7
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-redis/redis v6.14.2+incompatible
 	github.com/labstack/echo v3.3.5+incompatible

@@ -3,12 +3,16 @@
         "headerKey": "apikey",
         "lookupSec": 10,
         "limit": 20,
-        "redisEndpoint": ":3128"
+        "redisEndpoint": ":3128",
+        "blockTimeSec": 30,
+        "isRequiredKey": false
     },
     {
         "headerKey": "x-forwarded-for",
         "lookupSec": 10111,
         "limit": 1,
-        "redisEndpoint": ":3128"
+        "redisEndpoint": ":3128",
+        "blockTimeSec": 30,
+        "isRequiredKey": true
     }
 ]

@@ -9,47 +9,52 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bluele/gcache"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo"
 	"gopkg.in/go-playground/validator.v9"
 )
 
-var redisTimeoutMil = 100
-
-// refer https://www.alexedwards.net/blog/how-to-rate-limit-http-requests
-
-// RateDistRuleRaw rule for distruribted rate limit
+// RateDistRuleRaw rule for distruribted rate limit - for json parse
 type RateDistRuleRaw struct {
 	RedisEndpoint string `json:"redisEndpoint" validate:"required"`
 	HeaderKey     string `json:"headerKey" validate:"required"`
-	LookupSec     uint   `json:"LookupSec" validate:"required,gt=0"`
+	LookupSec     uint   `json:"lookupSec" validate:"required,gt=0"`
 	Limit         int64  `json:"limit" validate:"required,gt=0"`
-	// redisCli  *redis.Client
+	IsRequiredKey bool   `json:"isRequired" validate:"required"`
+	BlockSec      uint   `json:"blockTimeSec" validate:"required,gt=0"`
 }
 
+// RedisEndpoint rule for distruribted rate limit - internal
 type rateDistRule struct {
-	// RedisEndpoint string `json:"redisEndpoint" validate:"required"`
 	headerKey     string
-	lookupSec     uint
+	lookupTime    time.Duration
 	limit         int64
 	redisEndpoint string
 	redisCli      *redis.Client
+	isRequiredKey bool
+	blockTime     time.Duration
 }
 
 // required global config - limit
+var redisTimeoutMil = 100
+var sizeLocalcache = 20
+
 var _rateDistLimiterRules []rateDistRule
 var _rateDistLimiterRuleRWMutex *sync.RWMutex
 var _rateDistConfigUpdatedDate time.Time
+var _rateDistcacheCli gcache.Cache
 
 // InitRateDist init rate limiter
 func InitRateDist() {
 	_rateDistLimiterRuleRWMutex = new(sync.RWMutex)
 	_rateDistConfigUpdatedDate = time.Unix(0, 0) // need check UTC required
+	_rateDistcacheCli = gcache.New(sizeLocalcache).
+		ARC().
+		Build()
 	rateDistUpdateConfig()
 	// rateDistUpdateConfigWorker()
 }
-
-// func Unix(sec int64, nsec int64) Time
 
 // RateLimitDist limit request by request IP
 func RateLimitDist(next echo.HandlerFunc) echo.HandlerFunc {
@@ -85,17 +90,36 @@ func RateLimitDist(next echo.HandlerFunc) echo.HandlerFunc {
 				// 	PERFORM_API_CALL()
 				// END
 
+				// get header value & check exists
 				key := c.Request().Header.Get(limitRule.headerKey)
+				if key == "" {
+					ch <- !limitRule.isRequiredKey
+					return
+				}
+
+				// check local blacklist cache
+				keyCache := fmt.Sprintf("%s %s", limitRule.headerKey, key)
+				_, err := _rateDistcacheCli.Get(keyCache)
+				if err == nil {
+					ch <- false
+					return
+				}
+
+				// get from redis & check
 				rateCur, err := limitRule.redisCli.LLen(key).Result()
 				if err != nil {
 					ch <- true
 					return
 				}
+
+				// if exceeds, add blacklist and set fail
 				if rateCur > limitRule.limit {
+					_rateDistcacheCli.SetWithExpire(keyCache, true, limitRule.blockTime)
 					ch <- false
 					return
 				}
 
+				// check need create key in redis
 				isKeyExists, err := limitRule.redisCli.Exists(key).Result()
 				if err != nil {
 					ch <- true
@@ -105,7 +129,7 @@ func RateLimitDist(next echo.HandlerFunc) echo.HandlerFunc {
 					// https://godoc.org/github.com/go-redis/redis#ex-Client-TxPipeline
 					pipe := limitRule.redisCli.TxPipeline()
 					pipe.RPush(key, " ")
-					pipe.Expire(key, time.Second*time.Duration(limitRule.lookupSec))
+					pipe.Expire(key, limitRule.lookupTime)
 					_, err := pipe.Exec()
 					if err != nil {
 						fmt.Println(err) // just mark..
@@ -218,17 +242,19 @@ func rateDistUpdateConfig() {
 		for _, ruleOld := range rulesOld {
 			if ruleRaw.HeaderKey == ruleOld.headerKey &&
 				ruleRaw.RedisEndpoint == ruleOld.redisEndpoint &&
-				ruleRaw.LookupSec == ruleOld.lookupSec &&
-				ruleRaw.Limit == ruleOld.limit {
+				ruleRaw.Limit == ruleOld.limit &&
+				time.Second*time.Duration(ruleRaw.LookupSec) == ruleOld.lookupTime {
 				reuseRedisCli = ruleOld.redisCli
 				break
 			}
 		}
 		ruleNew := rateDistRule{
 			headerKey:     ruleRaw.HeaderKey,
-			lookupSec:     ruleRaw.LookupSec,
+			lookupTime:    time.Second * time.Duration(ruleRaw.LookupSec),
 			limit:         ruleRaw.Limit,
 			redisEndpoint: ruleRaw.RedisEndpoint,
+			isRequiredKey: ruleRaw.IsRequiredKey,
+			blockTime:     time.Second * time.Duration(ruleRaw.BlockSec),
 		}
 		if reuseRedisCli == nil {
 			ruleNew.redisCli = redis.NewClient(&redis.Options{
@@ -250,8 +276,8 @@ func rateDistUpdateConfig() {
 		for _, ruleNew := range rulesNew {
 			if ruleNew.headerKey == ruleOld.headerKey &&
 				ruleNew.redisEndpoint == ruleOld.redisEndpoint &&
-				ruleNew.lookupSec == ruleOld.lookupSec &&
-				ruleNew.limit == ruleOld.limit {
+				ruleNew.limit == ruleOld.limit &&
+				ruleNew.lookupTime == ruleOld.lookupTime {
 				isUnused = false
 				break
 			}
