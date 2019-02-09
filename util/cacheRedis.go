@@ -14,9 +14,6 @@ func redisInit() {
 	_redis = redis.NewClient(&redis.Options{
 		// https://godoc.org/github.com/go-redis/redis#Options
 		Addr:         "localhost:6379",
-		Password:     "", // no password set
-		DB:           0,  // use default DB
-		PoolSize:     20, // default is 10, per CPU
 		ReadTimeout:  time.Second,
 		WriteTimeout: time.Second,
 	})
