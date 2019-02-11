@@ -115,6 +115,7 @@ func RateLimitDist(next echo.HandlerFunc) echo.HandlerFunc {
 				// if exceeds, add blacklist and set fail
 				if rateCur > limitRule.limit {
 					_rateDistcacheCli.SetWithExpire(keyCache, true, limitRule.blockTime)
+					// intead blockTime, can use TTL redis commnad result for acutally remain TTL at redis (maybe good to add +1 second)
 					ch <- false
 					return
 				}
@@ -153,34 +154,6 @@ func RateLimitDist(next echo.HandlerFunc) echo.HandlerFunc {
 		return next(c)
 	}
 }
-
-// // Create a new rate limiter and add it to the visitors map, using the
-// // IP address as the key.
-// func rateLocalAddIP(ip string) *rate.Limiter {
-// 	limiter := rate.NewLimiter(2, 2)
-// 	_rateLocalLimiterIPsRWMutex.Lock()
-// 	_rateLocalLimiterIPs[ip] = &typeLimitIP{
-// 		limiter:  limiter,
-// 		lastSeen: time.Now(),
-// 	}
-// 	println("new limiter : ", _rateLocalLimiterIPs[ip])
-// 	_rateLocalLimiterIPsRWMutex.Unlock()
-// 	return limiter
-// }
-
-// // Retrieve and return the rate limiter for the current visitor if it
-// // already exists. Otherwise call the addVisitor function to add a
-// // new entry to the map.
-// func rateLocalGetIP(ip string) *rate.Limiter {
-// 	_rateLocalLimiterIPsRWMutex.RLock()
-// 	limiterIP, exists := _rateLocalLimiterIPs[ip]
-// 	_rateLocalLimiterIPsRWMutex.RUnlock()
-// 	if !exists {
-// 		return rateLocalAddIP(ip)
-// 	}
-// 	println("old limiter : ", limiterIP)
-// 	return limiterIP.limiter
-// }
 
 // Every minute check the map for visitors that haven't been seen for
 // more than minutes and delete the entries.
@@ -242,7 +215,6 @@ func rateDistUpdateConfig() {
 		for _, ruleOld := range rulesOld {
 			if ruleRaw.HeaderKey == ruleOld.headerKey &&
 				ruleRaw.RedisEndpoint == ruleOld.redisEndpoint &&
-				ruleRaw.Limit == ruleOld.limit &&
 				time.Second*time.Duration(ruleRaw.LookupSec) == ruleOld.lookupTime {
 				reuseRedisCli = ruleOld.redisCli
 				break
@@ -276,7 +248,6 @@ func rateDistUpdateConfig() {
 		for _, ruleNew := range rulesNew {
 			if ruleNew.headerKey == ruleOld.headerKey &&
 				ruleNew.redisEndpoint == ruleOld.redisEndpoint &&
-				ruleNew.limit == ruleOld.limit &&
 				ruleNew.lookupTime == ruleOld.lookupTime {
 				isUnused = false
 				break
