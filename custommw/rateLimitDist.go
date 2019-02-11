@@ -129,7 +129,7 @@ func RateLimitDist(next echo.HandlerFunc) echo.HandlerFunc {
 				if isKeyExists == 0 {
 					// https://godoc.org/github.com/go-redis/redis#ex-Client-TxPipeline
 					pipe := limitRule.redisCli.TxPipeline()
-					pipe.RPush(key, " ")
+					pipe.RPush(key, "_")
 					pipe.Expire(key, limitRule.lookupTime)
 					_, err := pipe.Exec()
 					if err != nil {
