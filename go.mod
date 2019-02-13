@@ -1,12 +1,7 @@
 module main
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/labstack/echo v3.3.5+incompatible
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/stretchr/testify v1.2.2 // indirect
-	golang.org/x/sys v0.0.0-20181122145206-62eef0e2fa9b // indirect
-	gopkg.in/go-playground/validator.v9 v9.24.0
+	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
 	local/api v0.0.0
 	local/custommw v0.0.0
 	local/util v0.0.0

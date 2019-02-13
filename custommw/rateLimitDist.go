@@ -11,7 +11,7 @@ import (
 
 	"github.com/bluele/gcache"
 	"github.com/go-redis/redis"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -21,7 +21,7 @@ type RateDistRuleRaw struct {
 	HeaderKey     string `json:"headerKey" validate:"required"`
 	LookupSec     uint   `json:"lookupSec" validate:"required,gt=0"`
 	Limit         int64  `json:"limit" validate:"required,gt=0"`
-	IsRequiredKey bool   `json:"isRequired" validate:"required"`
+	IsRequiredKey bool   `json:"isRequiredKey"`
 	BlockSec      uint   `json:"blockTimeSec" validate:"required,gt=0"`
 }
 
@@ -52,8 +52,13 @@ func InitRateDist() {
 	_rateDistcacheCli = gcache.New(sizeLocalcache).
 		ARC().
 		Build()
-	rateDistUpdateConfig()
+	// rateDistUpdateConfig()
 	// rateDistUpdateConfigWorker()
+
+	rateDistUpdateConfig("custommw/rateSample.json")
+	rateDistUpdateConfig("custommw/rateSample.1.json")
+	rateDistUpdateConfig("custommw/rateSample.json")
+	// runtime.GC()
 }
 
 // RateLimitDist limit request by request IP
@@ -92,10 +97,13 @@ func RateLimitDist(next echo.HandlerFunc) echo.HandlerFunc {
 
 				// get header value & check exists
 				key := c.Request().Header.Get(limitRule.headerKey)
-				if key == "" {
-					ch <- !limitRule.isRequiredKey
-					return
-				}
+				// << FOR TEST >>
+				// if key == "" {
+				// // flase is default value in go
+				// 	ch <- !limitRule.isRequiredKey
+				// 	return
+				// }
+				// << FOR TEST >>
 
 				// check local blacklist cache
 				keyCache := fmt.Sprintf("%s %s", limitRule.headerKey, key)
@@ -161,25 +169,27 @@ func rateDistUpdateConfigWorker() {
 	go func() {
 		for {
 			time.Sleep(time.Minute)
-			rateDistUpdateConfig()
+			rateDistUpdateConfig("custommw/rateSample.json")
 		}
 	}()
 }
 
-func rateDistUpdateConfig() {
+func rateDistUpdateConfig(filepath string) {
 	// 1. watch limit config object - check changed date
 	// local temp
-	_rateDistLimiterRuleRWMutex.RLock()
-	isAlreadyUpdate := len(_rateDistLimiterRules) > 0
-	_rateDistLimiterRuleRWMutex.RUnlock()
-	if isAlreadyUpdate {
-		return
-	}
+	// << FOR TEST >>
+	// _rateDistLimiterRuleRWMutex.RLock()
+	// isAlreadyUpdate := len(_rateDistLimiterRules) > 0
+	// _rateDistLimiterRuleRWMutex.RUnlock()
+	// if isAlreadyUpdate {
+	// 	return
+	// }
+	// << FOR TEST >>
 
 	// 2. if updated, download & update date
 	// local temp
 	// Open our jsonFile
-	jsonFile, err := os.Open("custommw/rateSample.json")
+	jsonFile, err := os.Open(filepath)
 	// if we os.Open returns an error then handle it
 	if err != nil {
 		fmt.Println(err)
@@ -199,6 +209,12 @@ func rateDistUpdateConfig() {
 	_rateDistLimiterRuleRWMutex.RUnlock()
 	rulesNew := make([]rateDistRule, 0, len(rulesRaw))
 
+	// map of current redis clients
+	redisEndpointMap := map[string][]*redis.Client{}
+	for _, ruleOld := range rulesOld {
+		redisEndpointMap[ruleOld.redisEndpoint] = append(redisEndpointMap[ruleOld.redisEndpoint], ruleOld.redisCli)
+	}
+
 	// create new rules object
 	jsonValidate := validator.New()
 	for _, ruleRaw := range rulesRaw {
@@ -210,16 +226,6 @@ func rateDistUpdateConfig() {
 			return
 		}
 
-		// check new header key
-		var reuseRedisCli *redis.Client
-		for _, ruleOld := range rulesOld {
-			if ruleRaw.HeaderKey == ruleOld.headerKey &&
-				ruleRaw.RedisEndpoint == ruleOld.redisEndpoint &&
-				time.Second*time.Duration(ruleRaw.LookupSec) == ruleOld.lookupTime {
-				reuseRedisCli = ruleOld.redisCli
-				break
-			}
-		}
 		ruleNew := rateDistRule{
 			headerKey:     ruleRaw.HeaderKey,
 			lookupTime:    time.Second * time.Duration(ruleRaw.LookupSec),
@@ -228,34 +234,26 @@ func rateDistUpdateConfig() {
 			isRequiredKey: ruleRaw.IsRequiredKey,
 			blockTime:     time.Second * time.Duration(ruleRaw.BlockSec),
 		}
-		if reuseRedisCli == nil {
+
+		// check possiable redis client
+		redisCliReuse, exists := redisEndpointMap[ruleRaw.RedisEndpoint]
+		if exists && len(redisCliReuse) > 0 {
+			// reuse redis client
+			ruleNew.redisCli = redisCliReuse[len(redisCliReuse)-1]
+			redisEndpointMap[ruleRaw.RedisEndpoint] = redisEndpointMap[ruleRaw.RedisEndpoint][:len(redisCliReuse)-1]
+			fmt.Println("hah! reuse")
+		} else {
+			// need new redis client
 			ruleNew.redisCli = redis.NewClient(&redis.Options{
 				Addr:         ruleRaw.RedisEndpoint,
 				ReadTimeout:  time.Millisecond * time.Duration(redisTimeoutMil),
 				WriteTimeout: time.Millisecond * time.Duration(redisTimeoutMil),
 			})
-		} else {
-			ruleNew.redisCli = reuseRedisCli
+			fmt.Println("hah! new client")
 		}
+		fmt.Println(ruleNew)
 
 		rulesNew = append(rulesNew, ruleNew)
-	}
-
-	// find redis client to release
-	redisCliUnused := make([]*redis.Client, 0, len(rulesRaw))
-	for _, ruleOld := range rulesOld {
-		isUnused := true
-		for _, ruleNew := range rulesNew {
-			if ruleNew.headerKey == ruleOld.headerKey &&
-				ruleNew.redisEndpoint == ruleOld.redisEndpoint &&
-				ruleNew.lookupTime == ruleOld.lookupTime {
-				isUnused = false
-				break
-			}
-		}
-		if isUnused {
-			redisCliUnused = append(redisCliUnused, ruleOld.redisCli)
-		}
 	}
 
 	// 4. apply to config
@@ -268,9 +266,17 @@ func rateDistUpdateConfig() {
 	_rateDistConfigUpdatedDate = time.Now()
 
 	// 6. release unused redis client resource
-	for _, redisCli := range redisCliUnused {
-		redisCli.Close()
+	fmt.Println("redisEndpointMap before", redisEndpointMap)
+	for endpoint, redisClis := range redisEndpointMap {
+		for _, redisCli := range redisClis {
+			fmt.Println("redis client deleted for", endpoint)
+			redisCli.Close()
+		}
+		redisEndpointMap[endpoint] = nil
 	}
+	fmt.Println("redisEndpointMap after", redisEndpointMap)
+
+	fmt.Println("--------- config done ----------")
 
 	// _rateLocalLimiterIPsRWMutex.RLock()
 	// for ip, limiterIP := range _rateLocalLimiterIPs {

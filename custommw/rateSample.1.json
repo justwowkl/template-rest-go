@@ -1,0 +1,26 @@
+[
+    {
+        "headerKey": "apikey2",
+        "lookupSec": 10,
+        "limit": 20,
+        "redisEndpoint": ":3129",
+        "blockTimeSec": 30,
+        "isRequiredKey": false
+    },
+    {
+        "headerKey": "x-forwarded-for2",
+        "lookupSec": 10111,
+        "limit": 1,
+        "redisEndpoint": ":3129",
+        "blockTimeSec": 30,
+        "isRequiredKey": true
+    },
+    {
+        "headerKey": "x-forwarded-for2",
+        "lookupSec": 10111,
+        "limit": 1,
+        "redisEndpoint": ":3128",
+        "blockTimeSec": 30,
+        "isRequiredKey": true
+    }
+]
