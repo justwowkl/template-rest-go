@@ -154,12 +154,16 @@ func RateLimitDist(next echo.HandlerFunc) echo.HandlerFunc {
 			}(_limitRule)
 		}
 
+		isOK := true
 		for i := 0; i < len(limitRules); i++ {
-			if !<-ch {
-				return c.String(http.StatusTooManyRequests, "")
+			if !<-ch && isOK {
+				isOK = false
 			}
 		}
-		return next(c)
+		if isOK {
+			return next(c)
+		}
+		return c.String(http.StatusTooManyRequests, "")
 	}
 }
 
